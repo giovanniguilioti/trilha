@@ -14,18 +14,20 @@ class Trilha
 private:
     std::map<int, std::vector<int>> grafo;
     std::map<int, char> tabuleiro;
-    int num_x = 0;
-    int num_o = 0;
+    std::map<char, int> num_pecas;
+    std::map<char, std::vector<int>> tabu;
     
     int verifica_impar(int i);
     int verifica_par(int i);
 
 public:
+    char pecas[2] = {'X', 'O'};
+
     Trilha();
     void cria_grafo();
     void inicia_jogo();
     void printa_jogo();
-    bool verifica_tripla(int pos);
+    bool verifica_tripla(int pos, char peca);
     void remove_peca(char peca);
-    bool movimenta_peca(int peca);
+    bool movimenta_peca(char peca);
 };

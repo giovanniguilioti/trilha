@@ -28,15 +28,6 @@ void Trilha::cria_grafo()
     this->grafo.emplace(21, std::vector<int>{13, 20, 22});
     this->grafo.emplace(22, std::vector<int>{21, 23});
     this->grafo.emplace(23, std::vector<int>{15, 16, 22});
-
-    /*for(auto& i : grafo)
-    {
-        std::cout<< i.first << ": ";
-        for(auto& v : i.second)
-            std::cout << v << " ";
-
-        std::cout << "\n";
-    }*/
 }
 
 void Trilha::inicia_jogo()
@@ -48,28 +39,13 @@ void Trilha::inicia_jogo()
         while(this->tabuleiro[pos])
             pos = rand() % 24;
 
-        if(i % 2 == 0)
-        {
-            std::cout << "inserindo peça: X na pos: " << pos << "\n";
-            this->tabuleiro[pos] = 'X';
-            this->num_x++;
-            printa_jogo();
-            if(verifica_tripla(pos))
-                remove_peca('O');
-        }
-        else
-        {
-            std::cout << "inserindo peça: O na pos: " << pos << "\n";
-            this->tabuleiro[pos] = 'O';
-            this->num_o++;
-            printa_jogo();
-            if(verifica_tripla(pos))
-                remove_peca('X');
-        }
+        std::cout << "inserindo peça: na pos: " << pos << "\n";
+        this->tabuleiro[pos] = pecas[i % 2];
+        this->num_pecas[pecas[i % 2]]++;
+        printa_jogo();
+        if(verifica_tripla(pos, pecas[i % 2]))
+            remove_peca(pecas[(i + 1) % 2]);
     }
-
-    /*for(auto& i :this->tabuleiro)
-        std::cout << i.first << " > " << i.second << "\n";*/
 }
 
 void Trilha::printa_jogo()
@@ -140,7 +116,7 @@ int Trilha::verifica_impar(int i)
     return -1;
 }
 
-bool Trilha::verifica_tripla(int pos)
+bool Trilha::verifica_tripla(int pos, char peca)
 {
     for (int i = 1; i < NUM_VERTICES; i = i + 2)
     {
@@ -153,11 +129,13 @@ bool Trilha::verifica_tripla(int pos)
             int tripla = verifica_impar(i);
             if(tripla >= 0)
             {
-                if (std::find(this->grafo[i].begin(), this->grafo[i].end(), pos) != this->grafo[i].end())
-                {
-                    std::cout << "esse movimento causou uma tripla" << "\n";
-                    return true;
-                }
+                if(std::find(this->tabu[peca].begin(), this->tabu[peca].end(), i) != this->tabu[peca].end())
+                    return false;
+
+                this->tabu[peca].push_back(i);
+                std::cout << "adicionando " << i << " na tabu de " << peca <<  "\n";
+
+                return true;
             }
         }
 
@@ -165,9 +143,14 @@ bool Trilha::verifica_tripla(int pos)
         int tripla = verifica_par(i);
         if(tripla >= 0)
         {
-            if (std::find(this->grafo[i].begin(), this->grafo[i].end(), pos) != this->grafo[i].end())
+            if(tripla >= 0)
             {
-                std::cout << "esse movimento causou uma tripla" << "\n";
+                if(std::find(this->tabu[peca].begin(), this->tabu[peca].end(), i) != this->tabu[peca].end())
+                    return false;
+
+                this->tabu[peca].push_back(i);
+                std::cout << "adicionando " << i << " na tabu de " << peca <<  "\n";
+
                 return true;
             }
         }
@@ -182,67 +165,66 @@ void Trilha::remove_peca(char peca)
 
     int pos = rand() % 24;
     while(!this->tabuleiro[pos] || this->tabuleiro[pos] != peca)
-    {
-        std::cout << pos << " no while\n";
         pos = rand() % 24;
-    }
 
-   this->tabuleiro.erase(pos);
-    if(peca == 'X')
-        this->num_x--;
-    else
-        this->num_o--;
-    std::cout << "removendo na pos: " << pos << "\n";
+    this->tabuleiro.erase(pos);
+    this->num_pecas[peca]--;
+
+    std::cout << "peca: " << peca << " removida na pos: " << pos << "\n";
+    printa_jogo();
 }
 
-bool Trilha::movimenta_peca(int peca)
+bool Trilha::movimenta_peca(char peca)
 {
     srand(time(NULL));
 
-    bool andou = false;
-    while(!andou)
+    while(true)
     {
-        if(num_x <= 2 || num_o <= 2)
+        if(this->num_pecas['X'] <= 2 || this->num_pecas['O'] <= 2)
             return false;
 
         int pos = rand() % 24;
-        if(peca)
-        {
-            while(this->tabuleiro[pos] != 'X')
-                pos = rand() % 24;
-        }
-        else
-        {
-            while(this->tabuleiro[pos] != 'O')
-                pos = rand() % 24;
-        }
+        while(this->tabuleiro[pos] != peca)
+            pos = rand() % 24;
 
-        std::cout << peca << ": " << pos << "\n";
+        if(this->num_pecas[peca] == 3)
+        {
+            int new_pos = rand() % 24;
+            while(this->tabuleiro[new_pos])
+                new_pos = rand() % 24;
+
+            this->tabuleiro[new_pos] = peca;
+            this->tabuleiro.erase(pos);
+            std::cout << "peca "<< peca << " movimentada da pos " << pos << " para a pos: " << new_pos << "\n";
+            printa_jogo();
+            
+            if(verifica_tripla(pos, this->pecas[peca]))
+            {
+                if(peca == 'X')
+                    remove_peca('O');
+                else
+                    remove_peca('X');
+            }
+            return true;
+        }
 
         for(auto& vertice : this->grafo[pos])
         {
             if(!tabuleiro[vertice])
             {
-                if(peca)
-                    this->tabuleiro[vertice] = 'X';
-                else
-                    this->tabuleiro[vertice] = 'O';
-
+                this->tabuleiro[vertice] = peca;
                 this->tabuleiro.erase(pos);
-                andou = true;
 
-                std::cout << "andei " << peca << "\n";
-
-                if(verifica_tripla(pos))
+                std::cout << "peca "<< peca << " movimentada da pos " << pos << " para a pos: " << vertice << "\n";
+                printa_jogo();
+                
+                if(verifica_tripla(pos, this->pecas[peca]))
                 {
-                    if(peca)
+                    if(peca == 'X')
                         remove_peca('O');
                     else
                         remove_peca('X');
                 }
-
-                //this->printa_jogo();
-
                 return true;
             }
         }

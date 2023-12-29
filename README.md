@@ -2,8 +2,6 @@
 
 **gcc**  
 
-**make**  
-
 **cmake** version 3.21 or superior  
 
 
@@ -19,6 +17,8 @@ cd build
 
 cmake ..  
 
-cmake --build .  
+cd src  
+
+cmake --build ..  
 
 ./trilha  
