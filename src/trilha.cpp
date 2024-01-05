@@ -1,5 +1,17 @@
 #include "trilha.h"
 
+static int conta_peca(Estado& estado, char peca)
+{
+    int count = 0;
+    for(auto i : estado.tabuleiro)
+    {
+        if(i.second == peca)
+            count++;
+    }
+
+    return count;
+}
+
 void Trilha::cria_grafo()
 {
     this->grafo.emplace(0,  std::vector<int>{1, 7});
@@ -75,9 +87,20 @@ void Trilha::inicia_jogo()
         this->estado_atual = adiciona_peca(this->estado_atual, this->pecas[i % 2]);
     }
 
-    auto pos = decisao_minimax(this->estado_atual, 0);
+    /*auto pos = decisao_minimax(this->estado_atual, 0);
     this->estado_atual = movimenta_peca(this->estado_atual, 'X', std::get<0>(pos), std::get<1>(pos));
-    /*int i = 0;
+    pos = decisao_minimax(this->estado_atual, 1);
+    this->estado_atual = movimenta_peca(this->estado_atual, 'O', std::get<0>(pos), std::get<1>(pos));
+    pos = decisao_minimax(this->estado_atual, 0);
+    this->estado_atual = movimenta_peca(this->estado_atual, 'X', std::get<0>(pos), std::get<1>(pos));
+    pos = decisao_minimax(this->estado_atual, 1);
+    this->estado_atual = movimenta_peca(this->estado_atual, 'O', std::get<0>(pos), std::get<1>(pos));
+    pos = decisao_minimax(this->estado_atual, 0);
+    this->estado_atual = movimenta_peca(this->estado_atual, 'X', std::get<0>(pos), std::get<1>(pos));
+    pos = decisao_minimax(this->estado_atual, 1);
+    this->estado_atual = movimenta_peca(this->estado_atual, 'O', std::get<0>(pos), std::get<1>(pos));*/
+
+    int i = 0;
     while(true)
     {
         auto pos = decisao_minimax(this->estado_atual, this->pecas[i]);
@@ -89,7 +112,7 @@ void Trilha::inicia_jogo()
     }
 
     std::cout << "posicao final: \n";
-    printa_jogo(this->estado_atual);*/
+    printa_jogo(this->estado_atual);
 }
 
 int Trilha::verifica_par(Estado& estado, int i, char peca)
@@ -346,7 +369,7 @@ std::map<int, std::vector<int>> Trilha::lista_acoes_restrita(Estado& estado)
 
 bool Trilha::teste_termino(Estado& estado, bool inicio /* = false*/)
 {
-    if(!inicio && (estado.tabuleiro.count('X') == 2 || estado.tabuleiro.count('O') == 2))
+    if(!inicio && (conta_peca(estado, 'X') <= 2 || conta_peca(estado, 'O') <= 2))
         return true;
 
     return false;
@@ -364,11 +387,18 @@ std::tuple<int, int, int> Trilha::decisao_minimax(Estado& estado, int peca)
 
         for(auto vizinho : acao.second)
         {
-            Estado novo_estado = estado;
+            /*Estado novo_estado = estado;
             novo_estado.tabuleiro[vizinho] = this->pecas[peca % 2];
-            novo_estado.tabuleiro.erase(acao.first);
+            novo_estado.tabuleiro.erase(acao.first);*/
 
-            resultados.push_back(valor_min(novo_estado, this->pecas[(peca % 2) + 1], acao.first, vizinho, profundidade + 1));
+            resultados.push_back({acao.first, vizinho, 
+                                        valor_max(  estado, 
+                                                    this->pecas[peca % 2], 
+                                                    profundidade + 1, 
+                                                    acao.first, 
+                                                    vizinho,
+                                                    std::numeric_limits<int>::min(),
+                                                    std::numeric_limits<int>::max())});
         }
     }
 
@@ -378,28 +408,41 @@ std::tuple<int, int, int> Trilha::decisao_minimax(Estado& estado, int peca)
     {
         if(std::get<2>(resultado) > max)
         {
-            std::cout << "alternando <" << std::get<0>(melhor_resultado) << ", " << std::get<1>(melhor_resultado) << ", " << std::get<2>(melhor_resultado) << "> ";
-            std::cout << "por <" << std::get<0>(resultado) << ", " << std::get<1>(resultado) << ", " << std::get<2>(resultado) << ">\n";
             max = std::get<2>(resultado);
             melhor_resultado = resultado;
         }
+    }
+
+    std::vector<std::tuple<int, int, int>> melhores_resultados;
+    for(auto resultado: resultados)
+        if(std::get<2>(resultado) == max && resultado != melhor_resultado)
+            melhores_resultados.push_back(resultado);
+
+    if(!melhores_resultados.empty())
+    {
+        std::cout << "mais de um estado com melhor utilidade\n";
+        srand(time(NULL));
+        int melhor_resultado_aleatorio = rand() % melhores_resultados.size();
+        std::cout << "melhor movimento da pos: "<< std::get<0>(melhores_resultados[melhor_resultado_aleatorio]) << " para a pos: " << std::get<1>(melhores_resultados[melhor_resultado_aleatorio]) << " utilidade: " << std::get<2>(melhores_resultados[melhor_resultado_aleatorio]) << "\n";
+        return melhores_resultados[melhor_resultado_aleatorio];
     }
 
     std::cout << "melhor movimento da pos: "<< std::get<0>(melhor_resultado) << " para a pos: " << std::get<1>(melhor_resultado) << " utilidade: " << std::get<2>(melhor_resultado) << "\n";
     return melhor_resultado;
 }
 
-std::tuple<int, int, int> Trilha::valor_min(Estado& estado, int peca, int fromPos, int toPos, int profundidade)
+int Trilha::valor_min(Estado& estado, int peca, int profundidade, int fromPos, int toPos, int minimo, int maximo)
 {
     if(teste_termino(estado) || profundidade == MAX_PROFUNDIDADE)
     {
         Estado novo_estado = estado;
         novo_estado.tabuleiro[toPos] = this->pecas[peca % 2];
         novo_estado.tabuleiro.erase(fromPos);
-        return std::tuple<int, int, int>{fromPos, toPos, utilidade(novo_estado, this->pecas[peca % 2])};
+        return utilidade(novo_estado, this->pecas[peca % 2]);
     }
 
     std::vector<std::tuple<int, int, int>> resultados;
+    int v = std::numeric_limits<int>::max();
     for(auto acao : lista_acoes_restrita(estado))
     {
         if(estado.tabuleiro[acao.first] != this->pecas[peca % 2])
@@ -411,35 +454,41 @@ std::tuple<int, int, int> Trilha::valor_min(Estado& estado, int peca, int fromPo
             novo_estado.tabuleiro[vizinho] = this->pecas[peca % 2];
             novo_estado.tabuleiro.erase(acao.first);
 
-            resultados.push_back(valor_max(novo_estado, this->pecas[(peca % 2) + 1], acao.first, vizinho, profundidade+1));
+            int v = valor_max(  novo_estado, 
+                                this->pecas[(peca % 2) +1], 
+                                profundidade + 1, 
+                                acao.first, 
+                                vizinho,
+                                minimo,
+                                maximo);
+
+            if(v >= minimo)
+                return v;
+
+            resultados.push_back({acao.first, vizinho, v});
         }
     }
 
-    std::tuple<int, int, int> melhor_resultado;
-    int max = std::numeric_limits<int>::min();
     for(auto resultado : resultados)
     {
-        if(std::get<2>(resultado) > max)
-        {
-            max = std::get<2>(resultado);
-            melhor_resultado = resultado;
-        }
+        if(std::get<2>(resultado) < maximo)
+            return std::get<2>(resultado);
     }
-
-    return melhor_resultado;
 }
 
-std::tuple<int, int, int> Trilha::valor_max(Estado& estado, int peca, int fromPos, int toPos, int profundidade)
+int Trilha::valor_max(Estado& estado, int peca, int profundidade, int fromPos, int toPos, int minimo, int maximo)
 {
     if(teste_termino(estado) || profundidade == MAX_PROFUNDIDADE)
     {
         Estado novo_estado = estado;
         novo_estado.tabuleiro[toPos] = this->pecas[peca % 2];
         novo_estado.tabuleiro.erase(fromPos);
-        return std::tuple<int, int, int>{fromPos, toPos, utilidade(novo_estado, this->pecas[peca % 2])};
+        return utilidade(novo_estado, this->pecas[peca % 2]);
     }
 
     std::vector<std::tuple<int, int, int>> resultados;
+    int v = std::numeric_limits<int>::min();
+
     for(auto acao : lista_acoes_restrita(estado))
     {
         if(estado.tabuleiro[acao.first] != this->pecas[peca % 2])
@@ -451,20 +500,25 @@ std::tuple<int, int, int> Trilha::valor_max(Estado& estado, int peca, int fromPo
             novo_estado.tabuleiro[vizinho] = this->pecas[peca % 2];
             novo_estado.tabuleiro.erase(acao.first);
 
-            resultados.push_back(valor_min(novo_estado, this->pecas[(peca % 2) + 1], acao.first, vizinho, profundidade + 1));
+            v = std::max(v, valor_min(  novo_estado, 
+                                this->pecas[(peca % 2) + 1],
+                                profundidade + 1, 
+                                acao.first, 
+                                vizinho,
+                                minimo,
+                                maximo));
+
+            if(v >= minimo)
+                return v;
+            
+            minimo = std::max(minimo, v);
+            resultados.push_back({acao.first, vizinho, v});
         }
     }
 
-    std::tuple<int, int, int> melhor_resultado;
-    int max = std::numeric_limits<int>::max();
     for(auto resultado : resultados)
     {
-        if(std::get<2>(resultado) < max)
-        {
-            max = std::get<2>(resultado);
-            melhor_resultado = resultado;
-        }
+        if(std::get<2>(resultado) > minimo)
+            return std::get<2>(resultado);
     }
-
-    return melhor_resultado;
 }

@@ -11,7 +11,7 @@
 #define NUM_VERTICES 24
 #define NUM_PECAS 18
 #define NUM_PECAS_JOGADOR 9
-#define MAX_PROFUNDIDADE 2
+#define MAX_PROFUNDIDADE 10
 
 class Trilha
 {
@@ -28,8 +28,8 @@ private:
     std::map<int, std::vector<int>> lista_acoes_livre(Estado& estado);
     std::map<int, std::vector<int>> lista_acoes_restrita(Estado& estado);
     bool teste_termino(Estado& estado, bool inicio  = false);
-    std::tuple<int, int, int> valor_min(Estado& estado, int peca, int fromPos, int toPos, int profundidade);
-    std::tuple<int, int, int> valor_max(Estado& estado, int peca, int fromPos, int toPos, int profundidade);
+    int valor_min(Estado& estado, int peca, int profundidade, int fromPos, int toPos, int minimo, int max);
+    int valor_max(Estado& estado, int peca, int profundidade, int fromPos, int toPos, int minimo, int max);
     Estado movimenta_peca(Estado& estado, char peca, int fromPos, int toPos);
     Estado adiciona_peca(Estado& estado, char peca);
     std::tuple<int, int, int> decisao_minimax(Estado& estado, int peca);
