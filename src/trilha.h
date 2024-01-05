@@ -11,7 +11,6 @@
 #define NUM_VERTICES 24
 #define NUM_PECAS 18
 #define NUM_PECAS_JOGADOR 9
-#define MAX_PROFUNDIDADE 10
 
 class Trilha
 {
@@ -19,6 +18,7 @@ private:
     char pecas[2] = {'X', 'O'};
     std::map<int, std::vector<int>> grafo;
     Estado estado_atual;
+    int profundidade;
     
     int verifica_impar(Estado& estado, int i, char peca);
     int verifica_par(Estado& estado, int i, char peca);
@@ -37,6 +37,7 @@ private:
 
 public:
     Trilha() = default;
+    Trilha(int profundidade);
     void cria_grafo();
     void inicia_jogo();
 };

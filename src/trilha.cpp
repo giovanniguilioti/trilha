@@ -12,6 +12,11 @@ static int conta_peca(Estado& estado, char peca)
     return count;
 }
 
+Trilha::Trilha(int profundidade)
+{
+    this->profundidade = profundidade;
+}
+
 void Trilha::cria_grafo()
 {
     this->grafo.emplace(0,  std::vector<int>{1, 7});
@@ -433,7 +438,7 @@ std::tuple<int, int, int> Trilha::decisao_minimax(Estado& estado, int peca)
 
 int Trilha::valor_min(Estado& estado, int peca, int profundidade, int fromPos, int toPos, int minimo, int maximo)
 {
-    if(teste_termino(estado) || profundidade == MAX_PROFUNDIDADE)
+    if(teste_termino(estado) || profundidade == this->profundidade)
     {
         Estado novo_estado = estado;
         novo_estado.tabuleiro[toPos] = this->pecas[peca % 2];
@@ -478,7 +483,7 @@ int Trilha::valor_min(Estado& estado, int peca, int profundidade, int fromPos, i
 
 int Trilha::valor_max(Estado& estado, int peca, int profundidade, int fromPos, int toPos, int minimo, int maximo)
 {
-    if(teste_termino(estado) || profundidade == MAX_PROFUNDIDADE)
+    if(teste_termino(estado) || profundidade == this->profundidade)
     {
         Estado novo_estado = estado;
         novo_estado.tabuleiro[toPos] = this->pecas[peca % 2];
