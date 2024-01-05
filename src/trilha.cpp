@@ -92,19 +92,6 @@ void Trilha::inicia_jogo()
         this->estado_atual = adiciona_peca(this->estado_atual, this->pecas[i % 2]);
     }
 
-    /*auto pos = decisao_minimax(this->estado_atual, 0);
-    this->estado_atual = movimenta_peca(this->estado_atual, 'X', std::get<0>(pos), std::get<1>(pos));
-    pos = decisao_minimax(this->estado_atual, 1);
-    this->estado_atual = movimenta_peca(this->estado_atual, 'O', std::get<0>(pos), std::get<1>(pos));
-    pos = decisao_minimax(this->estado_atual, 0);
-    this->estado_atual = movimenta_peca(this->estado_atual, 'X', std::get<0>(pos), std::get<1>(pos));
-    pos = decisao_minimax(this->estado_atual, 1);
-    this->estado_atual = movimenta_peca(this->estado_atual, 'O', std::get<0>(pos), std::get<1>(pos));
-    pos = decisao_minimax(this->estado_atual, 0);
-    this->estado_atual = movimenta_peca(this->estado_atual, 'X', std::get<0>(pos), std::get<1>(pos));
-    pos = decisao_minimax(this->estado_atual, 1);
-    this->estado_atual = movimenta_peca(this->estado_atual, 'O', std::get<0>(pos), std::get<1>(pos));*/
-
     int i = 0;
     while(true)
     {
@@ -392,10 +379,6 @@ std::tuple<int, int, int> Trilha::decisao_minimax(Estado& estado, int peca)
 
         for(auto vizinho : acao.second)
         {
-            /*Estado novo_estado = estado;
-            novo_estado.tabuleiro[vizinho] = this->pecas[peca % 2];
-            novo_estado.tabuleiro.erase(acao.first);*/
-
             resultados.push_back({acao.first, vizinho, 
                                         valor_max(  estado, 
                                                     this->pecas[peca % 2], 
@@ -467,9 +450,10 @@ int Trilha::valor_min(Estado& estado, int peca, int profundidade, int fromPos, i
                                 minimo,
                                 maximo);
 
-            if(v >= minimo)
+            if(v <= minimo)
                 return v;
 
+            maximo = std::max(maximo, v);
             resultados.push_back({acao.first, vizinho, v});
         }
     }
