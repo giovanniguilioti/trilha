@@ -145,8 +145,9 @@ void Trilha::printa_jogo_posicao(Estado& estado)
     std::cout << "4          " << "\n";
 }
 
-void Trilha::inicia_jogo()
+void Trilha::jogo_automatico()
 {
+    auto start = std::chrono::high_resolution_clock::now();
     srand(time(NULL));
 
     auto acoes = lista_acoes_livre(this->estado_atual);
@@ -154,23 +155,34 @@ void Trilha::inicia_jogo()
     printa_jogo(this->estado_atual);
 
     for(int i = 0; i < NUM_PECAS; ++i)
+    {
         this->estado_atual = adiciona_peca(this->estado_atual, this->pecas[i % 2]);
+        movimentos[this->pecas[i % 2]] += 1;
+    }
 
     int i = 0;
     while(true)
     {
-        
         auto pos = decisao_minimax(this->estado_atual, this->pecas[i]);
         std::cout << "utilidade do movimento: " << std::get<2>(pos) << "\n";
 
         this->estado_atual = movimenta_peca(this->estado_atual, this->pecas[i], std::get<0>(pos), std::get<1>(pos));
+        movimentos[this->pecas[i % 2]] += 1;
         if(teste_termino(this->estado_atual))
             break;
         i = (i + 1) % 2;
     }
 
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+
     std::cout << "posicao final: \n";
     printa_jogo(this->estado_atual);
+    std::cout << "profundidade da Arvore MinMax: " << this->profundidade << "\n";
+    std::cout << "jogadas de X: " << movimentos['X'] << "\n";
+    std::cout << "jogadas de O: " << movimentos['O'] << "\n";
+    std::cout << "jogadas total: "<< movimentos['X'] + movimentos['O'] << "\n";
+    std::cout << "tempo de jogo: " << duration.count() << " segundos\n";
 }
 
 int Trilha::verifica_par(Estado& estado, int i, char peca)

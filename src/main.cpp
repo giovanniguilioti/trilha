@@ -15,7 +15,7 @@ void full_game(int profundidade)
 
     Trilha* trilha = new Trilha(profundidade);
     trilha->cria_grafo();
-    trilha->inicia_jogo();
+    trilha->jogo_automatico();
 }
 
 void player_vs()

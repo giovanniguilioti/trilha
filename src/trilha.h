@@ -5,6 +5,7 @@
 #include <map>
 #include <algorithm>
 #include <limits>
+#include <chrono>
 
 #include "estado.h"
 
@@ -19,8 +20,7 @@ private:
     std::map<int, std::vector<int>> grafo;
     Estado estado_atual;
     int profundidade;
-    int movimentos_x = 0;
-    int movimentos_o = 0;
+    std::map<char, int> movimentos;
     
     int verifica_impar(Estado& estado, int i, char peca);
     int verifica_par(Estado& estado, int i, char peca);
@@ -45,6 +45,6 @@ public:
     Trilha() = default;
     Trilha(int profundidade);
     void cria_grafo();
-    void inicia_jogo();
+    void jogo_automatico();
     void player_vs_computer();
 };
