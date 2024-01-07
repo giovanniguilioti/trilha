@@ -10,5 +10,6 @@ private:
 public:
     Estado() = default;
     std::map<int, char> tabuleiro;
-    std::map<char, std::vector<int>> tripla_tabu;
+    std::map<char, std::vector<int>> tripla_impar;
+    std::map<char, std::vector<int>> tripla_par;
 };

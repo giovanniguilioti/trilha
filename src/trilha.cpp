@@ -79,6 +79,72 @@ void Trilha::printa_jogo(Estado& estado)
     std::cout << (estado.tabuleiro[4] ?estado.tabuleiro[4] : '-') << "          " << "\n";
 }
 
+void Trilha::printa_jogo_posicao(Estado& estado)
+{
+    std::cout << "==============================================================================================\n"; 
+    std::cout << (estado.tabuleiro[0] ? estado.tabuleiro[0] : '-') << "      ";
+    std::cout << (estado.tabuleiro[1] ? estado.tabuleiro[1] : '-') << "       ";
+    std::cout << (estado.tabuleiro[2] ? estado.tabuleiro[2] : '-') << "          ";
+
+    std::cout << "0        ";
+    std::cout << "1         ";
+    std::cout << "2          " << "\n";
+
+    std::cout << "  " << (estado.tabuleiro[8] ?estado.tabuleiro[8] : '-');
+    std::cout << "    " << (estado.tabuleiro[9] ?estado.tabuleiro[9] : '-');
+    std::cout << "     " << (estado.tabuleiro[10] ?estado.tabuleiro[10] : '-') << "          ";
+
+    std::cout << "    8";
+    std::cout << "      9";
+    std::cout << "      10" << "\n";
+
+    std::cout << "    " << (estado.tabuleiro[16] ?estado.tabuleiro[16] : '-');
+    std::cout << "  " << (estado.tabuleiro[17] ?estado.tabuleiro[17] : '-');
+    std::cout << "   " << (estado.tabuleiro[18] ?estado.tabuleiro[18] : '-') << "          ";
+
+    std::cout << "         16";
+    std::cout << "  17";
+    std::cout << "  18" << "\n";
+
+    std::cout << (estado.tabuleiro[7] ?estado.tabuleiro[7] : '-');
+    std::cout << " " << (estado.tabuleiro[15] ?estado.tabuleiro[15] : '-');
+    std::cout << " " << (estado.tabuleiro[23] ?estado.tabuleiro[23] : '-');
+    std::cout << "      " << (estado.tabuleiro[19] ?estado.tabuleiro[19] : '-');
+    std::cout << " " << (estado.tabuleiro[11] ?estado.tabuleiro[11] : '-');
+    std::cout << " " << (estado.tabuleiro[3] ?estado.tabuleiro[3] : '-') << "          ";
+
+    std::cout << "7";
+    std::cout << " 15";
+    std::cout << " 23";
+    std::cout << "      19";
+    std::cout << " 11";
+    std::cout << " 3" << "\n";
+
+    std::cout << "    " << (estado.tabuleiro[22] ?estado.tabuleiro[22] : '-');
+    std::cout << "  " << (estado.tabuleiro[21] ?estado.tabuleiro[21] : '-');
+    std::cout << "   " << (estado.tabuleiro[20] ?estado.tabuleiro[20] : '-') << "          ";
+
+    std::cout << "         22";
+    std::cout << "  21" ;
+    std::cout << "  20" << "\n";
+
+    std::cout << "  " << (estado.tabuleiro[14] ?estado.tabuleiro[14] : '-');
+    std::cout << "    " << (estado.tabuleiro[13] ?estado.tabuleiro[13] : '-');
+    std::cout << "     " << (estado.tabuleiro[12] ?estado.tabuleiro[12] : '-') << "          ";
+
+    std::cout << "    14";
+    std::cout << "     13";
+    std::cout << "     12" << "\n";
+
+    std::cout << (estado.tabuleiro[6] ?estado.tabuleiro[6] : '-') << "      ";
+    std::cout << (estado.tabuleiro[5] ?estado.tabuleiro[5] : '-') << "       ";
+    std::cout << (estado.tabuleiro[4] ?estado.tabuleiro[4] : '-') << "          ";
+
+    std::cout << "6        ";
+    std::cout << "5         ";
+    std::cout << "4          " << "\n";
+}
+
 void Trilha::inicia_jogo()
 {
     srand(time(NULL));
@@ -88,15 +154,15 @@ void Trilha::inicia_jogo()
     printa_jogo(this->estado_atual);
 
     for(int i = 0; i < NUM_PECAS; ++i)
-    {
         this->estado_atual = adiciona_peca(this->estado_atual, this->pecas[i % 2]);
-    }
 
     int i = 0;
     while(true)
     {
+        
         auto pos = decisao_minimax(this->estado_atual, this->pecas[i]);
         std::cout << "utilidade do movimento: " << std::get<2>(pos) << "\n";
+
         this->estado_atual = movimenta_peca(this->estado_atual, this->pecas[i], std::get<0>(pos), std::get<1>(pos));
         if(teste_termino(this->estado_atual))
             break;
@@ -141,7 +207,7 @@ int Trilha::verifica_impar(Estado& estado, int i, char peca)
     return -1;
 }
 
-int Trilha::verifica_tripla(Estado& estado, char peca)
+int Trilha::verifica_tripla(Estado& estado, char peca, int pos)
 {
     for(int i = 1; i < NUM_VERTICES; i = i + 2)
     {
@@ -150,22 +216,26 @@ int Trilha::verifica_tripla(Estado& estado, char peca)
 
         //verifica impar
         if((i >= 9 && i <= 15))
-            if(verifica_impar(estado, i, peca) >= 0)
+        {
+            int impar = verifica_impar(estado, i, peca);
+            if(impar >= 0 && std::find(this->grafo[i].begin(), this->grafo[i].end(), pos) != this->grafo[i].end())
             {
-                if(std::find(estado.tripla_tabu[peca].begin(), estado.tripla_tabu[peca].end(), i) != estado.tripla_tabu[peca].end())
+                if(std::find(estado.tripla_impar[peca].begin(), estado.tripla_impar[peca].end(), i) != estado.tripla_impar[peca].end())
                     return -1;
 
-                estado.tripla_tabu[peca].push_back(i);
+                estado.tripla_impar[peca].push_back(i);
                 return i;
             }
+        }
 
         //verifica par
-        if(verifica_par(estado, i, peca) >= 0)
+        int par = verifica_par(estado, i, peca);
+        if(par >= 0 && std::find(this->grafo[i].begin(), this->grafo[i].end(), pos) != this->grafo[i].end())
         {
-            if(std::find(estado.tripla_tabu[peca].begin(), estado.tripla_tabu[peca].end(), i) != estado.tripla_tabu[peca].end())
+            if(std::find(estado.tripla_par[peca].begin(), estado.tripla_par[peca].end(), par) != estado.tripla_par[peca].end())
                 return -1;
 
-            estado.tripla_tabu[peca].push_back(i);
+            estado.tripla_par[peca].push_back(i);
             return i;
         }
     }
@@ -188,6 +258,35 @@ void Trilha::remove_peca(Estado& estado, char peca)
     printa_jogo(estado);
 }
 
+void Trilha::remove_peca_manualmente(Estado& estado, char peca)
+{
+    int pos;
+    while(true)
+    {
+        std::cout << "remover peca: " << peca << " da posicao: ";
+        std::cin >> pos;
+        if(pos < 0 || pos > 24)
+        {
+            std::cout << "\n Erro: posição invalida\n";
+            printa_jogo_posicao(estado);
+            continue;
+        }
+        else if(this->estado_atual.tabuleiro[pos] != peca)
+        {
+            std::cout << "\nErro: peca invalida\n";
+            printa_jogo_posicao(estado);
+            continue;
+        }
+
+        auto it = estado.tabuleiro.find(pos);
+        estado.tabuleiro.erase(it);
+        break;
+    }
+
+    std::cout << "\npeca: " << peca << " removida na pos: " << pos << "\n";
+    printa_jogo_posicao(estado);
+}
+
 Estado Trilha::adiciona_peca(Estado& estado, char peca)
 {
     srand(time(NULL));
@@ -202,9 +301,9 @@ Estado Trilha::adiciona_peca(Estado& estado, char peca)
     novo_estado.tabuleiro[pos] = peca;
 
     std::cout << "adicionada peca: " << peca << " na pos: " << pos << " \n";
-    printa_jogo(novo_estado);
+    //printa_jogo(novo_estado);
 
-    int tripla = verifica_tripla(novo_estado, peca);
+    int tripla = verifica_tripla(novo_estado, peca, pos);
     if(tripla >= 0)
     {
         std::cout << "tripla de meio: " << tripla << " apos inserir na pos: " << pos << " a peca: " << peca << "\n";
@@ -216,9 +315,29 @@ Estado Trilha::adiciona_peca(Estado& estado, char peca)
     return novo_estado;
 }
 
+Estado Trilha::adiciona_peca_manualmente(Estado& estado, char peca, int pos)
+{
+    Estado novo_estado(estado);
+    
+    novo_estado.tabuleiro[pos] = peca;
+
+    std::cout << "adicionada peca: " << peca << " na pos: " << pos << " \n";
+    printa_jogo_posicao(novo_estado);
+
+    int tripla = verifica_tripla(novo_estado, peca, pos);
+    if(tripla >= 0)
+    {
+        std::cout << "tripla de meio: " << tripla << " apos inserir na pos: " << pos << " a peca: " << peca << "\n";
+        if(peca == 'X')
+            remove_peca_manualmente(novo_estado, 'O');
+        else
+            remove_peca_manualmente(novo_estado, 'X');
+    }
+    return novo_estado;
+}
+
 Estado Trilha::movimenta_peca(Estado& estado, char peca, int fromPos, int toPos)
 {
-    Estado estado_vazio;
     Estado novo_estado(estado);
 
     novo_estado.tabuleiro[toPos] = peca;
@@ -227,7 +346,7 @@ Estado Trilha::movimenta_peca(Estado& estado, char peca, int fromPos, int toPos)
     std::cout << "peca: " << peca << " movimentada da pos: " << fromPos << " para a pos: " << toPos << " \n";
     printa_jogo(novo_estado);
 
-    int tripla = verifica_tripla(novo_estado, peca);
+    int tripla = verifica_tripla(novo_estado, peca, toPos);
     if(tripla >= 0)
     {
         std::cout << "tripla de meio: " << tripla << " apos inserir na pos: " << fromPos << " a peca: " << peca << "\n";
@@ -235,6 +354,28 @@ Estado Trilha::movimenta_peca(Estado& estado, char peca, int fromPos, int toPos)
             remove_peca(novo_estado, 'O');
         else
             remove_peca(novo_estado, 'X');
+    }
+    return novo_estado;
+}
+
+Estado Trilha::movimenta_peca_manualmente(Estado& estado, char peca, int fromPos, int toPos)
+{
+    Estado novo_estado(estado);
+
+    novo_estado.tabuleiro[toPos] = peca;
+    novo_estado.tabuleiro.erase(fromPos);
+
+    std::cout << "peca: " << peca << " movimentada da pos: " << fromPos << " para a pos: " << toPos << " \n";
+    printa_jogo_posicao(novo_estado);
+
+    int tripla = verifica_tripla(novo_estado, peca, toPos);
+    if(tripla >= 0)
+    {
+        std::cout << "tripla de meio: " << tripla << " apos inserir na pos: " << fromPos << " a peca: " << peca << "\n";
+        if(peca == 'X')
+            remove_peca_manualmente(novo_estado, 'O');
+        else
+            remove_peca_manualmente(novo_estado, 'X');
     }
     return novo_estado;
 }
@@ -371,8 +512,14 @@ std::tuple<int, int, int> Trilha::decisao_minimax(Estado& estado, int peca)
 {
     int profundidade = 0;
     std::vector<std::tuple<int, int, int>> resultados;
+    std::map<int, std::vector<int>> acoes;
 
-    for(auto acao : lista_acoes_restrita(estado))
+    if(conta_peca(estado, this->pecas[peca % 2]) == 3)
+        acoes = lista_acoes_livre(estado);
+    else
+        acoes = lista_acoes_restrita(estado);
+
+    for(auto acao : acoes)
     {
         if(estado.tabuleiro[acao.first] != this->pecas[peca % 2])
             continue;
@@ -509,5 +656,95 @@ int Trilha::valor_max(Estado& estado, int peca, int profundidade, int fromPos, i
     {
         if(std::get<2>(resultado) > minimo)
             return std::get<2>(resultado);
+    }
+}
+
+void Trilha::player_vs_computer()
+{
+    int count = 0;
+    int i = 0;
+    while(true)
+    {
+        if(count > 8)
+        {
+            printa_jogo_posicao(this->estado_atual);
+            std::cout << "Mover peca: " << this->pecas[i % 2] << "\n da posicao: ";
+            int fromPos;
+            std::cin >> fromPos;
+            if(fromPos < 0 || fromPos > 24)
+            {
+                std::cout << "\n Erro: posição invalida\n";
+                continue;
+            }
+            else if(this->estado_atual.tabuleiro[fromPos] != this->pecas[i % 2])
+            {
+                std::cout << "\nErro: posição ja ocupada\n";
+                continue;
+            }
+
+            std::cout << "para a posicao: ";
+            int toPos;
+            std::cin >> toPos;
+            if(toPos < 0 || toPos > 24)
+            {
+                std::cout << "\n Erro: posição invalida\n";
+                continue;
+            }
+            else if(this->estado_atual.tabuleiro[toPos])
+            {
+                std::cout << "\nErro: posição ja ocupada\n";
+                continue;
+            }
+
+            std::map<int, std::vector<int>> acoes;
+            if(conta_peca(this->estado_atual, this->pecas[i % 2]) == 3)
+                acoes = lista_acoes_livre(this->estado_atual);
+            else
+                acoes = lista_acoes_restrita(this->estado_atual);
+
+            if(std::find(acoes[fromPos].begin(), acoes[fromPos].end(), toPos) != acoes[fromPos].end())
+            {
+                this->estado_atual = movimenta_peca_manualmente(this->estado_atual, this->pecas[i % 2], fromPos, toPos);
+                std::cout << "\npeca: " << this->pecas[i % 2] << " movida da posicao: " << fromPos << " para a posicao: " << toPos << "\n\n";
+            }
+            else
+                continue;
+
+            i = (i % 2) + 1;
+
+            auto pos_computer = decisao_minimax(this->estado_atual, this->pecas[i]);
+            this->estado_atual = movimenta_peca(this->estado_atual, this->pecas[i], std::get<0>(pos_computer), std::get<1>(pos_computer));
+            if(teste_termino(this->estado_atual))
+                break;
+        }
+        else
+        {
+            printa_jogo_posicao(this->estado_atual);
+            std::cout << "Adicionar peca: " << this->pecas[i % 2] << " na posicao(0 - 23): ";
+            int pos;
+            std::cin >> pos;
+            if(pos < 0 || pos > 24)
+            {
+                std::cout << "\n Erro: posição invalida\n";
+                continue;
+            }
+            else if(this->estado_atual.tabuleiro[pos])
+            {
+                std::cout << "\nErro: posição ja ocupada\n";
+                continue;
+            }
+
+            this->estado_atual = adiciona_peca_manualmente(this->estado_atual, this->pecas[i % 2], pos);
+            std::cout << "\npeca: " << this->pecas[i % 2] << " adicionada na posicao: " << pos << "\n\n";
+
+            i = (i % 2) + 1;
+
+            this->estado_atual = adiciona_peca(this->estado_atual, this->pecas[i % 2]);
+            count++;
+            if(teste_termino(this->estado_atual, true))
+                break;
+        }
+
+        i = (i % 2) + 1;
     }
 }
