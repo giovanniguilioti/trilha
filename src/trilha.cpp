@@ -221,7 +221,6 @@ int Trilha::verifica_impar(Estado& estado, int i, char peca)
 
 int Trilha::verifica_tripla(Estado& estado, char peca, int pos)
 {
-    std::cout << "verificando\n";
     for(int i = 1; i < NUM_VERTICES; i = i + 2)
     {
         if(!estado.tabuleiro[i] || estado.tabuleiro[i] != peca)
@@ -230,11 +229,9 @@ int Trilha::verifica_tripla(Estado& estado, char peca, int pos)
         //verifica impar
         if((i >= 9 && i <= 15))
         {
-            std::cout << "to entre 9 e 15\n";
             int impar = verifica_impar(estado, i, peca);
             if(impar >= 0 && std::find(this->grafo[i].begin(), this->grafo[i].end(), pos) != this->grafo[i].end())
             {
-                std::cout << "impar\n";
                 if(std::find(estado.tripla_impar[peca].begin(), estado.tripla_impar[peca].end(), i) == estado.tripla_impar[peca].end())
                 {
                     estado.tripla_impar[peca].push_back(i);
@@ -248,7 +245,6 @@ int Trilha::verifica_tripla(Estado& estado, char peca, int pos)
         int par = verifica_par(estado, i, peca);
         if(par >= 0 && std::find(this->grafo[i].begin(), this->grafo[i].end(), pos) != this->grafo[i].end())
         {
-            std::cout << "par\n";
             if(std::find(estado.tripla_par[peca].begin(), estado.tripla_par[peca].end(), i) == estado.tripla_par[peca].end())
             {
                 estado.tripla_par[peca].push_back(i);
@@ -256,8 +252,6 @@ int Trilha::verifica_tripla(Estado& estado, char peca, int pos)
             }
 
         }
-
-        std::cout << "fora\n";
     }
 
     return -1;
@@ -387,8 +381,6 @@ Estado Trilha::movimenta_peca_manualmente(Estado& estado, char peca, int fromPos
 
     std::cout << "peca: " << peca << " movimentada da pos: " << fromPos << " para a pos: " << toPos << " \n";
     printa_jogo_posicao(novo_estado);
-
-    std::cout << "antes de verificar\n";
 
     int tripla = verifica_tripla(novo_estado, peca, toPos);
     if(tripla >= 0)
