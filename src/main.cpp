@@ -54,8 +54,7 @@ void menu()
     std::cout << "=== Trilha Engine === \n";
     std::cout << "1 - jogo completo\n"; 
     std::cout << "2 - player vs computador\n"; 
-    std::cout << "3 - help\n"; 
-    std::cout << "4 - sair\n"; 
+    std::cout << "3 - sair\n"; 
     int escolha;
     std::cin >> escolha;
 
@@ -71,10 +70,6 @@ void menu()
             player_vs();
             break;
         case 3:
-            std::cout << "\nmais instrucoes em github.com/giovanniguilioti/trilha\n\n";
-            menu();
-            break;
-        case 4:
             exit(1);
         default:
             std::cout << "\nopção inválida\n\n";

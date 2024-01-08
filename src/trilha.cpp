@@ -77,11 +77,11 @@ void Trilha::printa_jogo(Estado& estado)
     std::cout << (estado.tabuleiro[6] ?estado.tabuleiro[6] : '-') << "      ";
     std::cout << (estado.tabuleiro[5] ?estado.tabuleiro[5] : '-') << "       ";
     std::cout << (estado.tabuleiro[4] ?estado.tabuleiro[4] : '-') << "          " << "\n";
+    std::cout << "=======================================================================\n"; 
 }
 
 void Trilha::printa_jogo_posicao(Estado& estado)
 {
-    std::cout << "==============================================================================================\n"; 
     std::cout << (estado.tabuleiro[0] ? estado.tabuleiro[0] : '-') << "      ";
     std::cout << (estado.tabuleiro[1] ? estado.tabuleiro[1] : '-') << "       ";
     std::cout << (estado.tabuleiro[2] ? estado.tabuleiro[2] : '-') << "          ";
@@ -143,6 +143,7 @@ void Trilha::printa_jogo_posicao(Estado& estado)
     std::cout << "6        ";
     std::cout << "5         ";
     std::cout << "4          " << "\n";
+    std::cout << "=======================================================================\n"; 
 }
 
 void Trilha::jogo_automatico()
@@ -164,7 +165,6 @@ void Trilha::jogo_automatico()
     while(true)
     {
         auto pos = decisao_minimax(this->estado_atual, this->pecas[i]);
-        std::cout << "utilidade do movimento: " << std::get<2>(pos) << "\n";
 
         this->estado_atual = movimenta_peca(this->estado_atual, this->pecas[i], std::get<0>(pos), std::get<1>(pos));
         movimentos[this->pecas[i % 2]] += 1;
@@ -315,7 +315,7 @@ Estado Trilha::adiciona_peca(Estado& estado, char peca)
     novo_estado.tabuleiro[pos] = peca;
 
     std::cout << "adicionada peca: " << peca << " na pos: " << pos << " \n";
-    //printa_jogo(novo_estado);
+    printa_jogo(novo_estado);
 
     int tripla = verifica_tripla(novo_estado, peca, pos);
     if(tripla >= 0)
@@ -569,7 +569,6 @@ std::tuple<int, int, int> Trilha::decisao_minimax(Estado& estado, int peca)
 
     if(!melhores_resultados.empty())
     {
-        std::cout << "mais de um estado com melhor utilidade\n";
         srand(time(NULL));
         int melhor_resultado_aleatorio = rand() % melhores_resultados.size();
         std::cout << "melhor movimento da pos: "<< std::get<0>(melhores_resultados[melhor_resultado_aleatorio]) << " para a pos: " << std::get<1>(melhores_resultados[melhor_resultado_aleatorio]) << " utilidade: " << std::get<2>(melhores_resultados[melhor_resultado_aleatorio]) << "\n";
