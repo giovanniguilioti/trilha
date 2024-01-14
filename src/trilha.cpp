@@ -12,9 +12,10 @@ static int conta_peca(Estado& estado, char peca)
     return count;
 }
 
-Trilha::Trilha(int profundidade)
+Trilha::Trilha(int profundidade_x, int profundidade_o)
 {
-    this->profundidade = profundidade;
+    this->profundidade[0] = profundidade_x;
+    this->profundidade[1] = profundidade_o;
 }
 
 void Trilha::cria_grafo()
@@ -164,7 +165,12 @@ void Trilha::jogo_automatico()
     int i = 0;
     while(true)
     {
-        auto pos = decisao_minimax(this->estado_atual, this->pecas[i]);
+        auto inicio_busca = std::chrono::high_resolution_clock::now();
+
+        auto pos = decisao_minimax(this->estado_atual, this->pecas[i], this->profundidade[i]);
+
+        auto fim_busca = std::chrono::high_resolution_clock::now();
+        this->tempo_de_busca[this->pecas[i]] += std::chrono::duration_cast<std::chrono::milliseconds>(fim_busca - inicio_busca).count();
 
         this->estado_atual = movimenta_peca(this->estado_atual, this->pecas[i], std::get<0>(pos), std::get<1>(pos));
         movimentos[this->pecas[i % 2]] += 1;
@@ -178,11 +184,14 @@ void Trilha::jogo_automatico()
 
     std::cout << "posicao final: \n";
     printa_jogo(this->estado_atual);
-    std::cout << "profundidade da Arvore MinMax: " << this->profundidade << "\n";
+    std::cout << "profundidade de X: " << this->profundidade[0] << "\n";
+    std::cout << "tempo de busca de X: " << this->tempo_de_busca['X'] / 1000 << " segundos\n";
     std::cout << "jogadas de X: " << movimentos['X'] << "\n";
+    std::cout << "profundidade de O: " << this->profundidade[1] << "\n";
+    std::cout << "tempo de busca de O: " << this->tempo_de_busca['O'] / 1000 << " segundos\n";
     std::cout << "jogadas de O: " << movimentos['O'] << "\n";
-    std::cout << "jogadas total: "<< movimentos['X'] + movimentos['O'] << "\n";
-    std::cout << "tempo de jogo: " << duration.count() << " segundos\n";
+    std::cout << "\njogadas total: "<< movimentos['X'] + movimentos['O'] << "\n";
+    std::cout << "tempo total de jogo: " << duration.count() << " segundos\n";
 }
 
 int Trilha::verifica_par(Estado& estado, int i, char peca)
@@ -395,80 +404,172 @@ Estado Trilha::movimenta_peca_manualmente(Estado& estado, char peca, int fromPos
 }
 
 /*
-* 5 - tripla
-* 2 - dupla
+* 5 - trilha
+* 3 - bloquear trilha inimiga
+* 1 - dupla
 */
-int Trilha::utilidade(Estado& estado, char peca)
+int Trilha::utilidade(Estado& estado, char peca, int fromPos, int toPos)
 {
     int valor = 0;
     std::vector<int> tabu_tripla;
     std::multimap<int, int> tabu_dupla;
-    for(int i = 1; i < NUM_VERTICES; i = i + 2)
-    {
-        if(!estado.tabuleiro[i] || estado.tabuleiro[i] != peca)
-            continue;
 
-        //verifica impar
-        if((i >= 9 && i <= 15))
+    for(auto i : estado.tripla_impar)
+        for(auto j : i.second)
+            tabu_tripla.push_back(j);
+
+    for(auto i : estado.tripla_par)
+        for(auto j : i.second)
+            tabu_tripla.push_back(j);
+
+    if(toPos % 2 == 0)
+    {
+        for(auto i : this->grafo[toPos])
         {
-            if(verifica_impar(estado, i, peca) >= 0)
+            if(!estado.tabuleiro[i])
+                continue;
+
+            if(estado.tabuleiro[i] != peca)
             {
-                if(std::find(tabu_tripla.begin(), tabu_tripla.end(), i) == tabu_tripla.end())
+                int count_equal = 0;
+                int count_nonequal = 0;
+                for(auto vertice : this->grafo[i])
                 {
-                    tabu_tripla.push_back(i);
-                    for(auto vizinho : this->grafo[i])
+                    if(vertice % 2 == 0)
                     {
-                        if(vizinho % 2 != 0)
+                        if(estado.tabuleiro[vertice] != peca && (estado.tabuleiro[vertice] == estado.tabuleiro[i]))
+                            count_equal++;
+                        else if(estado.tabuleiro[vertice] == peca && (estado.tabuleiro[vertice] != estado.tabuleiro[i]))
+                            count_nonequal++;
+                        
+                        if(count_equal == 1 && count_nonequal == 1)
                         {
-                            tabu_dupla.emplace(i, vizinho);
-                            tabu_dupla.emplace(vizinho, i);
+                            valor += 3;
                         }
                     }
+                }
+            }
+            else
+            {
+                //verifica par
+                if(verifica_par(estado, i, peca) >= 0)
+                {
+                    if(std::find(tabu_tripla.begin(), tabu_tripla.end(), i) == tabu_tripla.end())
+                    {
+                        tabu_tripla.push_back(i);
+                        valor += 5;
+                    }
+                }
+                else
+                {
+                    if(estado.tabuleiro[i] == estado.tabuleiro[toPos])
+                    {
+                        valor += 1;
+                    }
+                }
+            }
+        }
+    }
+    else if(toPos % 2 != 0)
+    {
+        //tratar bloquear tripla
+        for(auto i : this->grafo[toPos])
+        {
+            if(!estado.tabuleiro[i])
+                continue;
 
+            int count_par = 0;
+            int count_impar = 0;
+            int count_aux = 0;
+            if(i % 2 == 0)
+            {
+                if(estado.tabuleiro[i] != peca)
+                    count_par++;
+                    
+                if(count_par == 2)
+                {
+                    valor += 3;
+                }
+            }
+            else if(i % 2 != 0)
+            {
+                if(estado.tabuleiro[i] != peca)
+                    count_impar++;
+                    
+                if(count_impar == 2)
+                {
+                    valor += 3;
+                }
+
+                for(auto j : this->grafo[i])
+                {
+                    if(j % 2 != 0)
+                    {
+                        if(estado.tabuleiro[i] != peca)
+                            count_aux++;
+                    }
+                }
+
+                if((i >= 9 && i <= 15))
+                {
+                    if(verifica_impar(estado, i, peca) >= 0)
+                    {
+                        if(std::find(tabu_tripla.begin(), tabu_tripla.end(), i) == tabu_tripla.end())
+                        {
+                            tabu_tripla.push_back(i);
+                            valor += 5;
+                        }
+                    }
+                    else
+                    {
+                        if(estado.tabuleiro[i] == peca)
+                        {
+                            valor += 1;
+                        }
+                    }
+                }
+            }
+            if(count_aux == 1)
+            {
+                valor += 3;
+            }
+        }
+        
+        //verifica impar
+        if((toPos >= 9 && toPos <= 15))
+        {
+            if(verifica_impar(estado, toPos, peca) >= 0)
+            {
+                if(std::find(tabu_tripla.begin(), tabu_tripla.end(), toPos) == tabu_tripla.end())
+                {
+                    tabu_tripla.push_back(toPos);
                     valor += 5;
                 }
             }
         }
-
         //verifica par
-        if(verifica_par(estado, i, peca) >= 0)
+        if(verifica_par(estado, toPos, peca) >= 0)
         {
-            if(std::find(tabu_tripla.begin(), tabu_tripla.end(), i) == tabu_tripla.end())
+            if(std::find(tabu_tripla.begin(), tabu_tripla.end(), toPos) == tabu_tripla.end())
             {
-                tabu_tripla.push_back(i);
-
-                for(auto vizinho : this->grafo[i])
-                {
-                    if(vizinho % 2 == 0)
-                    {
-                        tabu_dupla.emplace(i, vizinho);
-                        tabu_dupla.emplace(vizinho, i);
-                    }
-                }
-
+                tabu_tripla.push_back(toPos);
                 valor += 5;
             }
         }
-    }
-
-    for(auto i : estado.tabuleiro)
-    {
-        for(auto vizinho : this->grafo[i.first])
+        else
         {
-            if(estado.tabuleiro[i.first] == peca && estado.tabuleiro[i.first] == estado.tabuleiro[vizinho])
+            int count = 0;
+            for(auto i : this->grafo[toPos])
             {
-                auto chave = tabu_dupla.find(i.first);
-                if (chave != tabu_dupla.end() && chave->second == vizinho)
-                    continue;
-
-                auto value = tabu_dupla.find(vizinho);
-                if (value != tabu_dupla.end() && value->second == i.first)
-                    continue;
-
-                tabu_dupla.emplace(i.first, vizinho);
-                tabu_dupla.emplace(vizinho, i.first);
-                    
-                valor += 2;
+                if(i % 2 == 0)
+                {
+                    if(estado.tabuleiro[i] == peca)
+                        count++;
+                }
+            }
+            if(count == 1)
+            {
+                valor += 1;
             }
         }
     }
@@ -522,9 +623,8 @@ bool Trilha::teste_termino(Estado& estado, bool inicio /* = false*/)
     return false;
 }
 
-std::tuple<int, int, int> Trilha::decisao_minimax(Estado& estado, int peca)
+std::tuple<int, int, int> Trilha::decisao_minimax(Estado& estado, int peca, int profundidade)
 {
-    int profundidade = 0;
     std::vector<std::tuple<int, int, int>> resultados;
     std::map<int, std::vector<int>> acoes;
 
@@ -543,7 +643,7 @@ std::tuple<int, int, int> Trilha::decisao_minimax(Estado& estado, int peca)
             resultados.push_back({acao.first, vizinho, 
                                         valor_max(  estado, 
                                                     this->pecas[peca % 2], 
-                                                    profundidade + 1, 
+                                                    profundidade - 1, 
                                                     acao.first, 
                                                     vizinho,
                                                     std::numeric_limits<int>::min(),
@@ -581,12 +681,12 @@ std::tuple<int, int, int> Trilha::decisao_minimax(Estado& estado, int peca)
 
 int Trilha::valor_min(Estado& estado, int peca, int profundidade, int fromPos, int toPos, int minimo, int maximo)
 {
-    if(teste_termino(estado) || profundidade == this->profundidade)
+    if(teste_termino(estado) || profundidade <= 0)
     {
         Estado novo_estado = estado;
         novo_estado.tabuleiro[toPos] = this->pecas[peca % 2];
         novo_estado.tabuleiro.erase(fromPos);
-        return utilidade(novo_estado, this->pecas[peca % 2]);
+        return utilidade(novo_estado, this->pecas[peca % 2], fromPos, toPos);
     }
 
     std::vector<std::tuple<int, int, int>> resultados;
@@ -604,7 +704,7 @@ int Trilha::valor_min(Estado& estado, int peca, int profundidade, int fromPos, i
 
             int v = valor_max(  novo_estado, 
                                 this->pecas[(peca % 2) +1], 
-                                profundidade + 1, 
+                                profundidade - 1, 
                                 acao.first, 
                                 vizinho,
                                 minimo,
@@ -627,12 +727,12 @@ int Trilha::valor_min(Estado& estado, int peca, int profundidade, int fromPos, i
 
 int Trilha::valor_max(Estado& estado, int peca, int profundidade, int fromPos, int toPos, int minimo, int maximo)
 {
-    if(teste_termino(estado) || profundidade == this->profundidade)
+    if(teste_termino(estado) || profundidade <= 0)
     {
         Estado novo_estado = estado;
         novo_estado.tabuleiro[toPos] = this->pecas[peca % 2];
         novo_estado.tabuleiro.erase(fromPos);
-        return utilidade(novo_estado, this->pecas[peca % 2]);
+        return utilidade(novo_estado, this->pecas[peca % 2], fromPos, toPos);
     }
 
     std::vector<std::tuple<int, int, int>> resultados;
@@ -651,7 +751,7 @@ int Trilha::valor_max(Estado& estado, int peca, int profundidade, int fromPos, i
 
             v = std::max(v, valor_min(  novo_estado, 
                                 this->pecas[(peca % 2) + 1],
-                                profundidade + 1, 
+                                profundidade - 1, 
                                 acao.first, 
                                 vizinho,
                                 minimo,
@@ -725,7 +825,7 @@ void Trilha::player_vs_computer()
 
             i = (i % 2) + 1;
 
-            auto pos_computer = decisao_minimax(this->estado_atual, this->pecas[i]);
+            auto pos_computer = decisao_minimax(this->estado_atual, this->pecas[i], this->profundidade[i]);
             this->estado_atual = movimenta_peca(this->estado_atual, this->pecas[i], std::get<0>(pos_computer), std::get<1>(pos_computer));
             if(teste_termino(this->estado_atual))
                 break;

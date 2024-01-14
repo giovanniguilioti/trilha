@@ -10,10 +10,10 @@ int main()
     return 0;
 }
 
-void full_game(int profundidade)
+void full_game(int profundidade_x, int profundidade_o)
 {
 
-    Trilha* trilha = new Trilha(profundidade);
+    Trilha* trilha = new Trilha(profundidade_x, profundidade_o);
     trilha->cria_grafo();
     trilha->jogo_automatico();
 }
@@ -31,13 +31,13 @@ void player_vs()
     switch(dificuldade)
     {
         case 1: 
-            trilha = new Trilha(3);
+            trilha = new Trilha(0, 3);
             break;
         case 2: 
-            trilha = new Trilha(6);
+            trilha = new Trilha(0, 6);
             break;
         case 3: 
-            trilha = new Trilha(9);
+            trilha = new Trilha(0, 9);
             break;
         default:
             std::cout << "\nopção inválida\n\n";
@@ -61,10 +61,14 @@ void menu()
     switch(escolha)
     {
         case 1:
-            std::cout << "escolha um nível de profundidade da árvore minmax\n";
-            int profundidade;
-            std::cin >> profundidade;
-            full_game(profundidade);
+            std::cout << "escolha um nível de profundidade da árvore minmax para o jogador X\n";
+            int profundidade_x;
+            std::cin >> profundidade_x;
+
+            std::cout << "escolha um nível de profundidade da árvore minmax para o jogador O\n";
+            int profundidade_o;
+            std::cin >> profundidade_o;
+            full_game(profundidade_x, profundidade_o);
             break;
         case 2:
             player_vs();
